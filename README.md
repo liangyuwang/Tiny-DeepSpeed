@@ -1,6 +1,6 @@
 # Tiny-DeepSpeed
 
-Welcome to Tiny-DeepSpeed, a minimalistic implementation of the DeepSpeed library. This project is designed to provide a simple, easy-to-understand codebase that helps learners and developers understand the core functionalities of DeepSpeed, a powerful library for accelerating deep learning models.
+Welcome to Tiny-DeepSpeed, a minimalistic implementation of the DeepSpeed library. This project is designed to provide a simple, easy-to-understand codebase that helps learners and developers understand the core functionalities of [DeepSpeed](https://github.com/microsoft/DeepSpeed), a powerful library for accelerating deep learning models.
 
 ## Project Overview
 
