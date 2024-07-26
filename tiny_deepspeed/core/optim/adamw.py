@@ -15,6 +15,7 @@ class AdamW(Optimizer):
         self.eps = eps
         self.weight_decay = weight_decay
         self.amsgrad = amsgrad
+        self.t = 0
         super().__init__(parameters)
     
 
@@ -26,7 +27,10 @@ class AdamW(Optimizer):
 
     
     def one_step(self, name, param):
-        grad = param.grad
+        if param.grad is None:
+            return param
+
+        grad = param.grad.data
         if self.weight_decay != 0:
             grad = grad.add(param.data, alpha=self.weight_decay)
         
@@ -36,13 +40,18 @@ class AdamW(Optimizer):
         v = self.velocities[name]
         v.mul_(self.betas[1]).addcmul_(grad, grad, value=1 - self.betas[1])
 
+        # Bias correction for first and second moments
+        m = m / (1 - self.betas[0] ** (self.t+1))
+        v = v / (1 - self.betas[1] ** (self.t+1))
+
         if self.amsgrad:
             max_v = self.max_squared[name]
-            torch.max(max_v, v, out=max_v)
-            denom = max_v.sqrt().add_(self.eps)
+            max_v = torch.max(max_v, v)
+            denom = max_v.sqrt().add(self.eps)
         else:
-            denom = v.sqrt().add_(self.eps)
+            denom = v.sqrt().add(self.eps)
 
-        step_size = self.lr / denom
-        param.data.addcdiv_(m, step_size, value=-1)
+        step_size = self.lr * m / denom
+        param.data.add_(-step_size)
+        self.t += 1
         return param

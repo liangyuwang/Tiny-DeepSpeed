@@ -20,8 +20,7 @@ input = torch.randn(1, 3, 224, 224).to(rank)
 target = torch.randint(0, 1000, (1,)).to(rank)
 model = vit_b_16().to(rank)
 loss_fn = torch.nn.CrossEntropyLoss()
-# optimizer = DDPSGD(model.named_parameters(), lr=1e-5, momentum=0.9)
-optimizer = DDPAdamW(model.named_parameters(), lr=1e-5)
+optimizer = DDPAdamW(model.named_parameters(), lr=1e-5, weight_decay=1e-1)
 
 for i in range(100):
     output = model(input)
