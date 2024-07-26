@@ -37,7 +37,6 @@ class SGD(sgd.SGD):
         self.ranks_map = ranks_map
         super().__init__(parameters, lr, momentum, dampening, weight_decay, nesterov, maximize)
     
-
     def _init_opt(self):
         # Initialize velocity for the local partition
         if self.momentum != 0:
@@ -52,14 +51,16 @@ class SGD(sgd.SGD):
                                                                             evenness_priority=0)
                 # Actual init velocities
                 for name, _ in self.velocities.items():
-                    self.velocities[name] = torch.zeros_like(self.velocities[name], 
-                                                             device=self.param_part_table[name])
+                    if dist.get_rank() == self.param_part_table[name]:
+                        self.velocities[name] = torch.zeros_like(self.velocities[name], 
+                                                                device=self.param_part_table[name])
             else:
-                # Actual init velocities
+                # Init velocities
                 for name, param in self.parameters.items():
-                    self.velocities[name] = torch.zeros_like(param, 
-                                                             device=self.param_part_table[name])
-        
+                    if dist.get_rank() == self.param_part_table[name]:
+                        self.velocities[name] = torch.zeros_like(param, 
+                                                                device=self.param_part_table[name])
+
     def step(self):
         _step_fn(self)
     
@@ -76,6 +77,8 @@ class AdamW(adamw.AdamW):
         # Initialize velocity for the local partition
         self.moments = OrderedDict()
         self.velocities = OrderedDict()
+        if self.amsgrad:
+            self.max_squared = OrderedDict()
         if self.param_part_table == None:
             self.param_part_table = OrderedDict()
             # Fake init velocities to avoid init it on single device
@@ -96,23 +99,25 @@ class AdamW(adamw.AdamW):
                                                         evenness_priority=0)
             # Actual init
             for name, _ in self.parameters.items():
-                self.moments[name] = torch.zeros_like(self.moments[name], 
-                                                    device=self.param_part_table[name])
-                self.velocities[name] = torch.zeros_like(self.velocities[name], 
+                if dist.get_rank() == self.param_part_table[name]:
+                    self.moments[name] = torch.zeros_like(self.moments[name], 
                                                         device=self.param_part_table[name])
-                if self.amsgrad:
-                    self.max_squared[name] = torch.zeros_like(self.max_squared[name], 
+                    self.velocities[name] = torch.zeros_like(self.velocities[name], 
                                                             device=self.param_part_table[name])
+                    if self.amsgrad:
+                        self.max_squared[name] = torch.zeros_like(self.max_squared[name], 
+                                                                device=self.param_part_table[name])
         else:
             # Init
             for name, param in self.parameters.items():
-                self.moments[name] = torch.zeros_like(param, 
-                                                    device=self.param_part_table[name])
-                self.velocities[name] = torch.zeros_like(param, 
+                if dist.get_rank() == self.param_part_table[name]:
+                    self.moments[name] = torch.zeros_like(param, 
                                                         device=self.param_part_table[name])
-                if self.amsgrad:
-                    self.max_squared[name] = torch.zeros_like(param, 
+                    self.velocities[name] = torch.zeros_like(param, 
                                                             device=self.param_part_table[name])
+                    if self.amsgrad:
+                        self.max_squared[name] = torch.zeros_like(param, 
+                                                                device=self.param_part_table[name])
         
     
     def step(self):
