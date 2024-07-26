@@ -1,4 +1,5 @@
 
+import torch
 import torch.distributed as dist
 
 from . import sgd, adamw
@@ -7,6 +8,7 @@ from . import sgd, adamw
 def sync_grads(grad):
     # TODO: make communication-compute overlap
     dist.all_reduce(grad)  # communication complexity: 2g
+    torch.cuda.synchronize()
     return grad
 
 def _step_fn(self):

@@ -29,8 +29,8 @@ input = torch.randn(1, 3, 224, 224).to(rank)
 target = torch.randint(0, 1000, (1,)).to(rank)
 model = vit_b_16().to(rank)
 loss_fn = torch.nn.CrossEntropyLoss()
-# optimizer = Zero1SGD(model.named_parameters(), lr=1e-5, momentum=0.9, param_part_table=parts, ranks_map=ranks_map)
-optimizer = Zero1AdamW(model.named_parameters(), lr=1e-5, param_part_table=parts, ranks_map=ranks_map)
+optimizer = Zero1SGD(model.named_parameters(), lr=1e-5, momentum=0.9, param_part_table=parts, ranks_map=ranks_map)
+# optimizer = Zero1AdamW(model.named_parameters(), lr=1e-5, param_part_table=parts, ranks_map=ranks_map)
 
 for i in range(100):
     output = model(input)

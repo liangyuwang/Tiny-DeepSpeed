@@ -9,12 +9,14 @@ from . import sgd, adamw
 
 def sync_grads(grad, rank):      # communication complexity: g
     # TODO: make communication-compute overlap
-    dist.reduce(grad, dst=rank, op=dist.ReduceOp.SUM)
+    dist.reduce(grad, dst=rank)
+    torch.cuda.synchronize()
     return grad
 
 def gather_grads(param, rank):      # communication complexity: g
     # TODO: make communication-compute overlap
     dist.broadcast(param, src=rank)
+    torch.cuda.synchronize()
 
 def _step_fn(self):
     for name, param in self.parameters.items():
