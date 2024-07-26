@@ -1,6 +1,9 @@
 # Tiny-DeepSpeed
 
 TODO:
-- [x] Zero1
+
+- [X] Zero1
 - [ ] Zero2
 - [ ] Zero3
+- [ ] AMP support
+- [ ] Compute-communication overlap
