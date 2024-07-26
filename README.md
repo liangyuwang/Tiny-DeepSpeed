@@ -2,6 +2,7 @@
 
 TODO:
 
+- [X] DDP
 - [X] Zero1
 - [ ] Zero2
 - [ ] Zero3
