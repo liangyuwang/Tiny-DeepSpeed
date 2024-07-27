@@ -46,20 +46,16 @@ class SGD(sgd.SGD):
                 # Fake init velocities to avoid init it on single device
                 for name, param in self.parameters.items():
                     self.velocities[name] = torch.zeros_like(param, device="meta")
-                self.param_part_table, self.velocities = partition_tensors(self.velocities,
-                                                                            ranks_map=self.ranks_map,
-                                                                            evenness_priority=0)
+                self.param_part_table, self.velocities = partition_tensors(self.velocities, ranks_map=self.ranks_map, evenness_priority=0)
                 # Actual init velocities
                 for name, _ in self.velocities.items():
                     if dist.get_rank() == self.param_part_table[name]:
-                        self.velocities[name] = torch.zeros_like(self.velocities[name], 
-                                                                device=self.param_part_table[name])
+                        self.velocities[name] = torch.zeros_like(self.velocities[name], device=self.param_part_table[name])
             else:
                 # Init velocities
                 for name, param in self.parameters.items():
                     if dist.get_rank() == self.param_part_table[name]:
-                        self.velocities[name] = torch.zeros_like(param, 
-                                                                device=self.param_part_table[name])
+                        self.velocities[name] = torch.zeros_like(param, device=self.param_part_table[name])
 
     def step(self):
         _step_fn(self)
@@ -71,7 +67,6 @@ class AdamW(adamw.AdamW):
         self.param_part_table = param_part_table
         self.ranks_map = ranks_map
         super().__init__(parameters, lr, betas, eps, weight_decay, amsgrad)
-
 
     def _init_opt(self):
         # Initialize velocity for the local partition
@@ -87,38 +82,25 @@ class AdamW(adamw.AdamW):
                 self.velocities[name] = torch.zeros_like(param, device="meta")
                 if self.amsgrad:
                     self.max_squared[name] = torch.zeros_like(param, device="meta")
-            self.param_part_table, self.moments = partition_tensors(self.moments,
-                                                                    ranks_map=self.ranks_map,
-                                                                    evenness_priority=0)
-            _, self.velocities = partition_tensors(self.velocities,
-                                                    ranks_map=self.ranks_map,
-                                                    evenness_priority=0)
+            self.param_part_table, self.moments = partition_tensors(self.moments, ranks_map=self.ranks_map, evenness_priority=0)
+            _, self.velocities = partition_tensors(self.velocities, ranks_map=self.ranks_map, evenness_priority=0)
             if self.amsgrad:
-                _, self.max_squared = partition_tensors(self.max_squared,
-                                                        ranks_map=self.ranks_map,
-                                                        evenness_priority=0)
+                _, self.max_squared = partition_tensors(self.max_squared, ranks_map=self.ranks_map, evenness_priority=0)
             # Actual init
             for name, _ in self.parameters.items():
                 if dist.get_rank() == self.param_part_table[name]:
-                    self.moments[name] = torch.zeros_like(self.moments[name], 
-                                                        device=self.param_part_table[name])
-                    self.velocities[name] = torch.zeros_like(self.velocities[name], 
-                                                            device=self.param_part_table[name])
+                    self.moments[name] = torch.zeros_like(self.moments[name], device=self.param_part_table[name])
+                    self.velocities[name] = torch.zeros_like(self.velocities[name], device=self.param_part_table[name])
                     if self.amsgrad:
-                        self.max_squared[name] = torch.zeros_like(self.max_squared[name], 
-                                                                device=self.param_part_table[name])
+                        self.max_squared[name] = torch.zeros_like(self.max_squared[name], device=self.param_part_table[name])
         else:
             # Init
             for name, param in self.parameters.items():
                 if dist.get_rank() == self.param_part_table[name]:
-                    self.moments[name] = torch.zeros_like(param, 
-                                                        device=self.param_part_table[name])
-                    self.velocities[name] = torch.zeros_like(param, 
-                                                            device=self.param_part_table[name])
+                    self.moments[name] = torch.zeros_like(param, device=self.param_part_table[name])
+                    self.velocities[name] = torch.zeros_like(param, device=self.param_part_table[name])
                     if self.amsgrad:
-                        self.max_squared[name] = torch.zeros_like(param, 
-                                                                device=self.param_part_table[name])
+                        self.max_squared[name] = torch.zeros_like(param, device=self.param_part_table[name])
         
-    
     def step(self):
         _step_fn(self)
