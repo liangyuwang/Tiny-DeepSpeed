@@ -10,8 +10,8 @@ import torch.distributed as dist
 from torchvision.models import vit_b_16
 from collections import OrderedDict
 
-from tiny_deepspeed.core.optim import Zero1SGD, Zero1AdamW
-from tiny_deepspeed.core.utils.partition import partition_tensors
+from tiny_deepspeed.core import Zero1SGD, Zero1AdamW
+from tiny_deepspeed.core import partition_tensors
 
 # init distributed
 rank = int(os.getenv('LOCAL_RANK', '0'))

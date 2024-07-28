@@ -7,10 +7,10 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 import torch
 import torch.distributed as dist
-from torchvision.models import vit_b_16
 from collections import OrderedDict
 
-from tiny_deepspeed.core.optim import DDPSGD, DDPAdamW
+from example.model import GPTConfig, GPT2Model
+from tiny_deepspeed.core import DDPSGD, DDPAdamW, DDP
 
 # init distributed
 rank = int(os.getenv('LOCAL_RANK', '0'))
@@ -19,15 +19,16 @@ world_size = int(os.getenv('WORLD_SIZE', '1'))
 dist.init_process_group(backend='nccl', init_method='env://', world_size=world_size, rank=rank)
 torch.cuda.set_device(rank)
 
-input = torch.randn(1, 3, 224, 224).to(rank)
-target = torch.randint(0, 1000, (1,)).to(rank)
-model = vit_b_16().to(rank)
-loss_fn = torch.nn.CrossEntropyLoss()
+config = GPTConfig()
+input = torch.randint(0, config.vocab_size, (1, config.block_size)).to(rank)
+target = torch.randint(0, config.vocab_size, (1, config.block_size)).to(rank)
+model = GPT2Model(config).to(rank)
+model = DDP(model)
 optimizer = DDPAdamW(model.named_parameters(), lr=1e-5, weight_decay=1e-1)
 
 for i in range(100):
-    output = model(input)
-    loss = loss_fn(output, target)
+    model.require_backward_grad_sync = True # set to True when need grad all reduce
+    _, loss = model(input, target)
     loss.backward()
     optimizer.step()
     dist.all_reduce(loss, op=dist.ReduceOp.AVG)

@@ -7,7 +7,7 @@ from collections import OrderedDict
 import torch.distributed as dist
 
 from ..utils.partition import partition_tensors
-from . import sgd, adamw
+from ...optim import sgd, adamw
 
 
 def sync_grads(grad, rank):      # communication complexity: g

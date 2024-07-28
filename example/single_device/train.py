@@ -7,7 +7,6 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 import torch
 from torchvision.models import vit_b_16
-from collections import OrderedDict
 
 from tiny_deepspeed.core.optim import SGD, AdamW
 
