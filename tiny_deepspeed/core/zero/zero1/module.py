@@ -14,11 +14,14 @@ from ...module import (
 )
 from .utils import Parameter
 
-def grad_sync(grad, async_op=True):    # communication complexity: 2g
-    if async_op:
-        return dist.reduce(grad, async_op=True)
+def grad_sync(grad, async_op=True, rank_id=None):    # communication complexity: g
+    if rank_id:
+        if async_op:
+            return dist.reduce(grad, dst=rank_id, async_op=True)
+        else:
+            dist.reduce(grad, dst=rank_id, async_op=False)
     else:
-        dist.reduce(grad, async_op=False)
+        return None
 
 
 class Linear(linear.Linear):
@@ -35,7 +38,7 @@ class Linear(linear.Linear):
         if ctx.needs_input_grad[1]:
             grad_weight = ops.linear_weight_grad(grad_output, input, weight, runtime_tuner)
             if self.weight.bwd_sync:
-                handle_weight = grad_sync(grad_weight)
+                handle_weight = grad_sync(grad_weight, rank_id=self.weight.rank_id)
                 self.weight.bwd_sync = False
             else:
                 handle_weight = None
@@ -45,7 +48,7 @@ class Linear(linear.Linear):
         if bias is not None and ctx.needs_input_grad[2]:
             grad_bias = ops.linear_bias_grad(grad_output, input, weight, runtime_tuner)
             if self.bias.bwd_sync:
-                handle_bias = grad_sync(grad_bias)
+                handle_bias = grad_sync(grad_bias, rank_id=self.bias.rank_id)
                 self.bias.bwd_sync = False
             else:
                 handle_bias = None
@@ -96,10 +99,10 @@ class LayerNorm(normalization.LayerNorm):
         dx, dw_, db_, args = ops.layernorm_dx(grad_output, input, weight, bias, mean, rstd, args, runtime_tuner)
         dw, db = ops.layernorm_dwdb(weight, bias, dw_, db_, args, runtime_tuner)
         if self.weight.bwd_sync:
-            grad_sync(dw, async_op=False)
+            grad_sync(dw, async_op=False, rank_id=self.weight.rank_id)
             self.weight.bwd_sync = False
         if self.bias.bwd_sync:
-            grad_sync(db, async_op=False)
+            grad_sync(db, async_op=False, rank_id=self.bias.rank_id)
             self.bias.bwd_sync = False
         
         # Check if the grad shape is correct
@@ -130,7 +133,7 @@ class Embedding(embedding.Embedding):
         if ctx.needs_input_grad[1]:
             grad_weight = ops.embedding_weight_grad(grad_output, input, weight, runtime_tuner)
             if self.weight.bwd_sync:
-                grad_sync(grad_weight, async_op=False)
+                grad_sync(grad_weight, async_op=False, rank_id=self.weight.rank_id)
                 self.weight.bwd_sync = False
         else:
             grad_weight = None

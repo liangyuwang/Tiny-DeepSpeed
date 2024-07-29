@@ -26,7 +26,7 @@ def _step_fn(self):
         if param.grad is None:
             continue
         rank = self.param_part_table[name]
-        param.grad = sync_grads(param.grad, rank)
+        # param.grad = sync_grads(param.grad, rank)
         if rank == dist.get_rank():
             param = self.one_step(name, param)
         gather_grads(param, rank)

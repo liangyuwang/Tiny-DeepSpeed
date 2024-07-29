@@ -8,7 +8,8 @@ from .zero.ddp import (
     DDP
 )
 from .zero.zero1 import (
-    Zero1SGD, Zero1AdamW
+    Zero1SGD, Zero1AdamW,
+    Zero1
 )
 
 from .zero.utils.partition import partition_tensors
