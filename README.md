@@ -36,17 +36,17 @@ cd Tiny-DeepSpeed
 
 ## Running the Demo
 
-To run the Tiny-DeepSpeed demo, use the following command:
+To run the Tiny-DeepSpeed demo, use the following command (set $num_device$ to your number of devices):
 
 ```bash
 # Single Device
 python example/single_device/train.py
 
 # DDP mode
-torchrun --nproc_per_node $num_device$ --nnodes 1 example/ddp/train.py
+torchrun --nproc_per_node $your_num_device$ --nnodes 1 example/ddp/train.py
 
 # Zero1 mode
-torchrun --nproc_per_node $num_device$ --nnodes 1 example/zero1/train.py
+torchrun --nproc_per_node $your_num_device$ --nnodes 1 example/zero1/train.py
 ```
 
 This will initiate a simple training loop using the Tiny-DeepSpeed framework.
