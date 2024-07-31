@@ -14,11 +14,22 @@ from ...module import (
 )
 from .utils import Parameter
 
-def sync_grad(grad, async_op=True):    # communication complexity: 2g
-    if async_op:
-        return dist.all_reduce(grad, async_op=True)
+def sync_grad(grad, async_op=True, rank_id=None):    # communication complexity: g
+    if rank_id:
+        if async_op:
+            return dist.reduce(grad, dst=rank_id, async_op=True)
+        else:
+            dist.reduce(grad, dst=rank_id, async_op=False)
     else:
-        dist.all_reduce(grad, async_op=False)
+        return None
+
+def desync_grad(grad, rank_id=None):
+    if grad is not None and rank_id is not None:
+        if dist.get_rank() != rank_id:
+            return None
+        else:
+            return grad
+    return grad
 
 
 class Linear(linear.Linear):
@@ -35,9 +46,8 @@ class Linear(linear.Linear):
 
         if ctx.needs_input_grad[1]:
             grad_weight = ops.linear_weight_grad(grad_output, input, weight, runtime_tuner)
-            if self.weight.bwd_sync:    # core step of ddp
-                handle_weight = sync_grad(grad_weight)
-                self.weight.bwd_sync = False
+            if self.weight.bwd_sync:    # core step of zero2
+                handle_weight = sync_grad(grad_weight, rank_id=self.weight.rank_id)
             else:
                 handle_weight = None
         else:
@@ -45,9 +55,8 @@ class Linear(linear.Linear):
 
         if bias is not None and ctx.needs_input_grad[2]:
             grad_bias = ops.linear_bias_grad(grad_output, input, weight, runtime_tuner)
-            if self.bias.bwd_sync:  # core step of ddp
-                handle_bias = sync_grad(grad_bias)
-                self.bias.bwd_sync = False
+            if self.bias.bwd_sync:  # core step of zero2
+                handle_bias = sync_grad(grad_bias, rank_id=self.bias.rank_id)
             else:
                 handle_bias = None
         else:
@@ -58,7 +67,7 @@ class Linear(linear.Linear):
         else:
             grad_input = None
 
-        # Communication-computation overlap, wait for the communication to finish (core step of ddp)
+        # Communication-computation overlap, wait for the communication to finish
         if ctx.needs_input_grad[1] and handle_weight is not None:
             handle_weight.wait()
         if bias is not None and ctx.needs_input_grad[2] and handle_bias is not None:
@@ -72,6 +81,14 @@ class Linear(linear.Linear):
         if grad_bias is not None and grad_bias.shape != bias.shape:
             raise RuntimeError(f"grad_bias shape {grad_bias.shape} is not equal to bias shape {bias.shape}")
         
+        # Desync the grad (core step of zero2)
+        if ctx.needs_input_grad[1] and self.weight.bwd_sync:
+            grad_weight = desync_grad(grad_weight, rank_id=self.weight.rank_id)
+            self.weight.bwd_sync = False
+        if bias is not None and ctx.needs_input_grad[2] and self.bias.bwd_sync:
+            grad_bias = desync_grad(grad_bias, rank_id=self.bias.rank_id)
+            self.bias.bwd_sync = False
+
         return grad_input, grad_weight, grad_bias
 
 
@@ -97,12 +114,10 @@ class LayerNorm(normalization.LayerNorm):
         }
         dx, dw_, db_, args = ops.layernorm_dx(grad_output, input, weight, bias, mean, rstd, args, runtime_tuner)
         dw, db = ops.layernorm_dwdb(weight, bias, dw_, db_, args, runtime_tuner)
-        if self.weight.bwd_sync:    # core step of ddp
-            sync_grad(dw, async_op=False)
-            self.weight.bwd_sync = False
-        if self.bias.bwd_sync:  # core step of ddp
-            sync_grad(db, async_op=False)
-            self.bias.bwd_sync = False
+        if self.weight.bwd_sync:    # core step of zero2
+            sync_grad(dw, async_op=False, rank_id=self.weight.rank_id)
+        if self.bias.bwd_sync:  # core step of zero2
+            sync_grad(db, async_op=False, rank_id=self.bias.rank_id)
         
         # Check if the grad shape is correct
         if dx is not None and dx.shape != input.shape:
@@ -111,6 +126,14 @@ class LayerNorm(normalization.LayerNorm):
             raise RuntimeError(f"grad_weight shape {dw.shape} is not equal to weight shape {weight.shape}")
         if db is not None and db.shape != bias.shape:
             raise RuntimeError(f"grad_bias shape {db.shape} is not equal to bias shape {bias.shape}")
+
+        # Desync the grad (core step of zero2)
+        if self.weight.bwd_sync:
+            dw = desync_grad(dw, rank_id=self.weight.rank_id)
+            self.weight.bwd_sync = False
+        if self.bias.bwd_sync:
+            db = desync_grad(db, rank_id=self.bias.rank_id)
+            self.bias.bwd_sync = False
 
         return dx, dw, db
 
@@ -131,15 +154,19 @@ class Embedding(embedding.Embedding):
 
         if ctx.needs_input_grad[1]:
             grad_weight = ops.embedding_weight_grad(grad_output, input, weight, runtime_tuner)
-            if self.weight.bwd_sync:    # core step of ddp
-                sync_grad(grad_weight, async_op=False)
-                self.weight.bwd_sync = False
+            if self.weight.bwd_sync:    # core step of zero2
+                sync_grad(grad_weight, async_op=False, rank_id=self.weight.rank_id)
         else:
             grad_weight = None
 
         # Check if the grad shape is correct
         if grad_weight is not None and grad_weight.shape != weight.shape:
             raise RuntimeError(f"grad_weight shape {grad_weight.shape} is not equal to weight shape {weight.shape}")
+
+        # Desync the grad (core step of zero2)
+        if ctx.needs_input_grad[1] and self.weight.bwd_sync:
+            grad_weight = desync_grad(grad_weight, rank_id=self.weight.rank_id)
+            self.weight.bwd_sync = False
 
         return grad_weight
 

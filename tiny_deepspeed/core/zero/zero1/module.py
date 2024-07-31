@@ -14,7 +14,7 @@ from ...module import (
 )
 from .utils import Parameter
 
-def grad_sync(grad, async_op=True, rank_id=None):    # communication complexity: g
+def sync_grad(grad, async_op=True, rank_id=None):    # communication complexity: g
     if rank_id:
         if async_op:
             return dist.reduce(grad, dst=rank_id, async_op=True)
@@ -31,14 +31,15 @@ class Linear(linear.Linear):
             self.bias = Parameter(torch.empty(self.out_features, **self.factory_kwargs))
         else:
             self.register_parameter('bias', None)
+        self.reset_parameters()
     
     def backward_callback(self, ctx, grad_output, runtime_tuner):
         input, weight, bias = ctx.saved_tensors
 
         if ctx.needs_input_grad[1]:
             grad_weight = ops.linear_weight_grad(grad_output, input, weight, runtime_tuner)
-            if self.weight.bwd_sync:
-                handle_weight = grad_sync(grad_weight, rank_id=self.weight.rank_id)
+            if self.weight.bwd_sync:    # core step of zero1
+                handle_weight = sync_grad(grad_weight, rank_id=self.weight.rank_id)
                 self.weight.bwd_sync = False
             else:
                 handle_weight = None
@@ -47,8 +48,8 @@ class Linear(linear.Linear):
 
         if bias is not None and ctx.needs_input_grad[2]:
             grad_bias = ops.linear_bias_grad(grad_output, input, weight, runtime_tuner)
-            if self.bias.bwd_sync:
-                handle_bias = grad_sync(grad_bias, rank_id=self.bias.rank_id)
+            if self.bias.bwd_sync:  # core step of zero1
+                handle_bias = sync_grad(grad_bias, rank_id=self.bias.rank_id)
                 self.bias.bwd_sync = False
             else:
                 handle_bias = None
@@ -60,10 +61,10 @@ class Linear(linear.Linear):
         else:
             grad_input = None
 
-        # Communication-computation overlap
-        if ctx.needs_input_grad[1] and handle_weight:
+        # Communication-computation overlap, wait for the communication to finish (core step of zero1)
+        if ctx.needs_input_grad[1] and handle_weight is not None:
             handle_weight.wait()
-        if bias is not None and ctx.needs_input_grad[2] and handle_bias:
+        if bias is not None and ctx.needs_input_grad[2] and handle_bias is not None:
             handle_bias.wait()
 
         # Check if the grad shape is correct
@@ -88,6 +89,7 @@ class LayerNorm(normalization.LayerNorm):
         else:
             self.register_parameter('weight', None)
             self.register_parameter('bias', None)
+        self.reset_parameters()
 
     def backward_callback(self, ctx, grad_output, eps, runtime_tuner):
         input, weight, bias, mean, rstd = ctx.saved_tensors
@@ -98,11 +100,11 @@ class LayerNorm(normalization.LayerNorm):
         }
         dx, dw_, db_, args = ops.layernorm_dx(grad_output, input, weight, bias, mean, rstd, args, runtime_tuner)
         dw, db = ops.layernorm_dwdb(weight, bias, dw_, db_, args, runtime_tuner)
-        if self.weight.bwd_sync:
-            grad_sync(dw, async_op=False, rank_id=self.weight.rank_id)
+        if self.weight.bwd_sync:    # core step of zero1
+            sync_grad(dw, async_op=False, rank_id=self.weight.rank_id)
             self.weight.bwd_sync = False
-        if self.bias.bwd_sync:
-            grad_sync(db, async_op=False, rank_id=self.bias.rank_id)
+        if self.bias.bwd_sync:  # core step of zero1
+            sync_grad(db, async_op=False, rank_id=self.bias.rank_id)
             self.bias.bwd_sync = False
         
         # Check if the grad shape is correct
@@ -132,8 +134,8 @@ class Embedding(embedding.Embedding):
 
         if ctx.needs_input_grad[1]:
             grad_weight = ops.embedding_weight_grad(grad_output, input, weight, runtime_tuner)
-            if self.weight.bwd_sync:
-                grad_sync(grad_weight, async_op=False, rank_id=self.weight.rank_id)
+            if self.weight.bwd_sync:    # core step of zero1
+                sync_grad(grad_weight, async_op=False, rank_id=self.weight.rank_id)
                 self.weight.bwd_sync = False
         else:
             grad_weight = None

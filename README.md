@@ -60,5 +60,6 @@ This will initiate a simple training loop using the Tiny-DeepSpeed framework.
 - [ ] Zero3
 - [ ] AMP support
 - [X] Compute-communication overlap
+- [X] Meta initialization
 - [ ] Multi nodes
 - [ ] Communication Bucket

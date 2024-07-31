@@ -24,14 +24,14 @@ def gather_grads(param, rank):      # communication complexity: g
 
 def _step_fn(self):
     for name, param in self.parameters.items():
-        if param.grad is None:
-            continue
         rank = self.param_part_table[name]
+        if rank == dist.get_rank() and param.grad is None:
+            continue
         # param.grad = sync_grads(param.grad, rank)
         if rank == dist.get_rank():
             param = self.one_step(name, param)
-        gather_grads(param, rank)
         self._zero_grad(param)
+        gather_grads(param, rank)
 
 
 class SGD(sgd.SGD):

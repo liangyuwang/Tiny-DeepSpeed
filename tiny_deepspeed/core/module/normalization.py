@@ -43,7 +43,6 @@ class LayerNorm(nn.LayerNorm):
         self.elementwise_affine = elementwise_affine
         self.runtime_tuner = RuntimeAutoTuner(enable=auto_tune) if auto_tune else None
         self._init_parameters()
-        self.reset_parameters()
     
     def _init_parameters(self):
         if self.elementwise_affine:
@@ -55,6 +54,7 @@ class LayerNorm(nn.LayerNorm):
         else:
             self.register_parameter('weight', None)
             self.register_parameter('bias', None)
+        self.reset_parameters()
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         if self.runtime_tuner:

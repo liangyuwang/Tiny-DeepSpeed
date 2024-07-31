@@ -23,7 +23,6 @@ class Linear(nn.Linear):
         self.factory_kwargs = {'device': device, 'dtype': dtype}
         self.runtime_tuner = RuntimeAutoTuner(enable=auto_tune) if auto_tune else None
         self._init_parameters()
-        self.reset_parameters()
     
     def _init_parameters(self):
         self.weight = nn.Parameter(torch.empty((self.out_features, self.in_features), **self.factory_kwargs))
@@ -31,6 +30,7 @@ class Linear(nn.Linear):
             self.bias = nn.Parameter(torch.empty(self.out_features, **self.factory_kwargs))
         else:
             self.register_parameter('bias', None)
+        self.reset_parameters()
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         if self.runtime_tuner:

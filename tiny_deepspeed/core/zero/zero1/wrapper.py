@@ -28,6 +28,7 @@ class Zero1(nn.Module):
     def forward(self, *args, **kwargs):
         if self.require_backward_grad_sync:
             self.enable_grad_sync()
+        self.require_backward_grad_sync = False
         return self.module(*args, **kwargs)
 
     def set_rank_id(self):

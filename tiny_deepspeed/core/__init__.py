@@ -11,5 +11,13 @@ from .zero.zero1 import (
     Zero1SGD, Zero1AdamW,
     Zero1
 )
+from .zero.zero2 import (
+    Zero2SGD, Zero2AdamW,
+    Zero2
+)
+from .zero.zero3 import (
+    Zero3SGD, Zero3AdamW,
+    Zero3
+)
 
 from .zero.utils.partition import partition_tensors
