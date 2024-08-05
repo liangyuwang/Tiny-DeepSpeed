@@ -77,10 +77,10 @@ def get_init_args(module):
             "sparse": module.sparse,
         }
     else:
-        raise NotImplementedError(f"Unsupported module type: {type(module)}")
+        raise NotImplementedError(f"Unsupported module type: {type(module)}. Currently support modules: [nn.Linear, nn.LayerNorm, nn.Embedding].")
 
 def error_handling(model: nn.Module):
     for name, param in model.named_parameters():
         if not hasattr(param, "bwd_sync"):
-            raise NotImplementedError(f"Module {name} is not supported yet.")
+            raise NotImplementedError(f"Module {name} is not supported yet. Currently support modules: [nn.Linear, nn.LayerNorm, nn.Embedding].")
 
