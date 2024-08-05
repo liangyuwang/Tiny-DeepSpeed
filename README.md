@@ -47,6 +47,9 @@ torchrun --nproc_per_node num_device --nnodes 1 example/ddp/train.py
 
 # Zero1 mode
 torchrun --nproc_per_node num_device --nnodes 1 example/zero1/train.py
+
+# Zero2 mode
+torchrun --nproc_per_node num_device --nnodes 1 example/zero2/train.py
 ```
 
 This will initiate a simple training loop using the Tiny-DeepSpeed framework.
@@ -56,7 +59,7 @@ This will initiate a simple training loop using the Tiny-DeepSpeed framework.
 - [X] Single Device
 - [X] DDP
 - [X] Zero1
-- [ ] Zero2
+- [X] Zero2
 - [ ] Zero3
 - [ ] AMP support
 - [X] Compute-communication overlap
