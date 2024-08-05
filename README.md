@@ -55,7 +55,7 @@ torchrun --nproc_per_node num_device --nnodes 1 example/zero2/train.py
 
 This will initiate a simple training loop using the Tiny-DeepSpeed framework.
 
-Feel free to try our demo on [Kaggle Notebook](https://www.kaggle.com/code/wlykaggle/tiny-deepspeed-example)
+Feel free to try our demo online on [Kaggle Notebook](https://www.kaggle.com/code/wlykaggle/tiny-deepspeed-example)
 
 ## TODO:
 
