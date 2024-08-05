@@ -15,17 +15,19 @@ from ...module import (
 from .utils import Parameter
 
 def sync_grad(grad, async_op=True, rank_id=None):    # communication complexity: g
-    if rank_id:
-        if async_op:
-            return dist.reduce(grad, dst=rank_id, async_op=True)
-        else:
-            dist.reduce(grad, dst=rank_id, async_op=False)
+    if async_op:
+        return dist.reduce(grad, dst=rank_id, async_op=True)
     else:
+        dist.reduce(grad, dst=rank_id, async_op=False)
         return None
 
 def desync_grad(grad, rank_id=None):
     if grad is not None and rank_id is not None:
         if dist.get_rank() != rank_id:
+            # print(dist.get_rank(), rank_id)
+            grad.data = torch.randn(1, device=grad.device, dtype=grad.dtype)
+            grad.data.to("cpu")  # should actually be released but impossible in pytorch, maybe solved by plugin C++
+            torch.cuda.synchronize()
             return None
         else:
             return grad
@@ -40,6 +42,9 @@ class Linear(linear.Linear):
         else:
             self.register_parameter('bias', None)
         self.reset_parameters()
+        desync_grad(self.weight.grad, self.weight.rank_id)
+        if self.use_bias:
+            desync_grad(self.bias.grad, self.bias.rank_id)
     
     def backward_callback(self, ctx, grad_output, runtime_tuner):
         input, weight, bias = ctx.saved_tensors
