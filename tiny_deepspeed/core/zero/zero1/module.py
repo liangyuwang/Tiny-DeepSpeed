@@ -15,12 +15,10 @@ from ...module import (
 from .utils import Parameter
 
 def sync_grad(grad, async_op=True, rank_id=None):    # communication complexity: g
-    if rank_id:
-        if async_op:
-            return dist.reduce(grad, dst=rank_id, async_op=True)
-        else:
-            dist.reduce(grad, dst=rank_id, async_op=False)
+    if async_op:
+        return dist.reduce(grad, dst=rank_id, async_op=True)
     else:
+        dist.reduce(grad, dst=rank_id, async_op=False)
         return None
 
 
