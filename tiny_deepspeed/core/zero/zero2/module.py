@@ -16,10 +16,12 @@ from .utils import Parameter
 
 def sync_grad(grad, async_op=True, rank_id=None):    # communication complexity: g
     if async_op:
-        return dist.reduce(grad, dst=rank_id, async_op=True)
+        work = dist.reduce(grad, dst=rank_id, async_op=True)
     else:
         dist.reduce(grad, dst=rank_id, async_op=False)
-        return None
+        work = None
+    torch.cuda.synchronize()
+    return work
 
 def desync_grad(grad, rank_id=None):
     if grad is not None and rank_id is not None:
@@ -27,11 +29,11 @@ def desync_grad(grad, rank_id=None):
             # print(dist.get_rank(), rank_id)
             grad.data = torch.randn(1, device=grad.device, dtype=grad.dtype)
             grad.data.to("cpu")  # should actually be released but impossible in pytorch, maybe solved by plugin C++
-            torch.cuda.synchronize()
-            return None
-        else:
-            return grad
-    return grad
+            grad = None
+        torch.cuda.synchronize()
+        return grad
+    else:
+        return None
 
 
 class Linear(linear.Linear):

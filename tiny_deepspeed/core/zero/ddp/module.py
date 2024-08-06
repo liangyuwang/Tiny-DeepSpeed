@@ -16,9 +16,12 @@ from .utils import Parameter
 
 def sync_grad(grad, async_op=True):    # communication complexity: 2g
     if async_op:
-        return dist.all_reduce(grad, async_op=True)
+        work = dist.all_reduce(grad, async_op=True)
     else:
         dist.all_reduce(grad, async_op=False)
+        work = None
+    torch.cuda.synchronize()
+    return work
 
 
 class Linear(linear.Linear):
