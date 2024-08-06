@@ -1,6 +1,6 @@
 # Tiny-DeepSpeed
 
-Welcome to Tiny-DeepSpeed, a minimalistic implementation of the DeepSpeed library. This project is designed to provide a simple, easy-to-understand codebase that helps learners and developers understand the core functionalities of [DeepSpeed](https://github.com/microsoft/DeepSpeed), a powerful library for accelerating deep learning models.
+Welcome to Tiny-DeepSpeed, a minimalistic re-implementation of the DeepSpeed library. This project is designed to provide a simple, easy-to-understand codebase that helps learners and developers understand the core functionalities of [DeepSpeed](https://github.com/microsoft/DeepSpeed), a powerful library for accelerating deep learning models.
 
 This project is highly inspired by [CoreScheduler](https://github.com/TheCoreTeam/core_scheduler/), a High-Performance Scheduler for Large Model Training
 
