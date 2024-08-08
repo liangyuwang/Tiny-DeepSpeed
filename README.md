@@ -1,8 +1,8 @@
 # Tiny-DeepSpeed
 
-Share us a ⭐ if this github repo does help.
-
 Welcome to Tiny-DeepSpeed, a minimalistic re-implementation of the DeepSpeed library. This project is designed to provide a simple, easy-to-understand codebase that helps learners and developers understand the core functionalities of [DeepSpeed](https://github.com/microsoft/DeepSpeed), a powerful library for accelerating deep learning models.
+
+Share us a ⭐ if this github repo does help.
 
 If you encounter any question, please feel free to contact us. You can create an issue or just send an email to me at [liangyu.wang@kaust.edu.sa](liangyu.wang@kaust.edu.sa).
 
