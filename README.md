@@ -6,8 +6,6 @@ Share us a ⭐ if this github repo does help.
 
 If you encounter any question, please feel free to contact us. You can create an issue or just send an email to me at [liangyu.wang@kaust.edu.sa](liangyu.wang@kaust.edu.sa).
 
-This project is highly inspired by [CoreScheduler](https://github.com/TheCoreTeam/core_scheduler/), a High-Performance Scheduler for Large Model Training
-
 ## Getting Started
 
 ### Prerequisites
