@@ -5,6 +5,7 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+from tqdm.auto import tqdm
 import torch
 import torch.distributed as dist
 from collections import OrderedDict
@@ -26,12 +27,12 @@ model = GPT2Model(config).to(rank)
 model = DDP(model)
 optimizer = DDPAdamW(model.named_parameters(), lr=1e-5, weight_decay=1e-1)
 
-for i in range(100):
+for i in tqdm(range(100)):
     model.require_backward_grad_sync = True # set to True when need grad all reduce
     _, loss = model(input, target)
     loss.backward()
     optimizer.step()
     dist.all_reduce(loss, op=dist.ReduceOp.AVG)
-    if rank==0: print(f"iter {i} loss: {loss.item():.4f}")
+    if rank==0: tqdm.write(f"iter {i} loss: {loss.item():.4f}")
 
 dist.destroy_process_group()
