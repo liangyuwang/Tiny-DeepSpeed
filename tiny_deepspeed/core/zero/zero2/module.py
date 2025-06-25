@@ -26,9 +26,7 @@ def sync_grad(grad, async_op=True, rank_id=None):    # communication complexity:
 def desync_grad(grad, rank_id=None):
     if grad is not None and rank_id is not None:
         if dist.get_rank() != rank_id:
-            # print(dist.get_rank(), rank_id)
-            grad.data = torch.randn(1, device=grad.device, dtype=grad.dtype)
-            grad.data.to("cpu")  # should actually be released but impossible in pytorch, maybe solved by plugin C++
+            grad.data = torch.Tensor([0])   # force to clear the grad
             grad = None
         torch.cuda.synchronize()
         return grad
