@@ -24,6 +24,12 @@ class GPTConfig:
     bias: bool = False
     attention = "standard_attention" # "standard_attention", "flash_attention"
 
+class GPTConfigs:
+    gpt2: GPTConfig = GPTConfig(n_layer=12, n_head=12, n_embd=768)
+    gpt2_medium: GPTConfig = GPTConfig(n_layer=24, n_head=16, n_embd=1024)
+    gpt2_large: GPTConfig = GPTConfig(n_layer=36, n_head=20, n_embd=1280)
+    gpt2_xl: GPTConfig = GPTConfig(n_layer=48, n_head=25, n_embd=1600)
+
 # Masked Multi-Head Self-Attention
 
 def standard_attention(q, k, v, dropout=True, dropout_p=0.0):

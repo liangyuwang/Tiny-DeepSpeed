@@ -10,7 +10,7 @@ import torch
 import torch.distributed as dist
 from collections import OrderedDict
 
-from example.model import GPTConfig, GPT2Model
+from example.model import GPTConfigs, GPT2Model
 from tiny_deepspeed.core import DDPSGD, DDPAdamW, DDP
 
 # init distributed
@@ -20,7 +20,7 @@ world_size = int(os.getenv('WORLD_SIZE', '1'))
 dist.init_process_group(backend='nccl', init_method='env://', world_size=world_size, rank=rank)
 torch.cuda.set_device(rank)
 
-config = GPTConfig()
+config = GPTConfigs.gpt2
 input = torch.randint(0, config.vocab_size, (1, config.block_size)).to(rank)
 target = torch.randint(0, config.vocab_size, (1, config.block_size)).to(rank)
 model = GPT2Model(config).to(rank)

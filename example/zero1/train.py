@@ -10,7 +10,7 @@ import torch
 import torch.distributed as dist
 from collections import OrderedDict
 
-from example.model import GPTConfig, GPT2Model
+from example.model import GPTConfigs, GPT2Model
 from tiny_deepspeed.core import Zero1SGD, Zero1AdamW, Zero1
 from tiny_deepspeed.core import partition_tensors
 
@@ -21,7 +21,7 @@ world_size = int(os.getenv('WORLD_SIZE', '1'))
 dist.init_process_group(backend='nccl', init_method='env://', world_size=world_size, rank=rank)
 torch.cuda.set_device(rank)
 
-config = GPTConfig()
+config = GPTConfigs.gpt2
 ranks_map = [f"cuda:{i}" for i in range(world_size)]
 with torch.device('meta'):
     model = GPT2Model(config)
