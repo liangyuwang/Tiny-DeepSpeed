@@ -4,6 +4,10 @@ Welcome to Tiny-DeepSpeed, a minimalistic re-implementation of the DeepSpeed lib
 
 Share us a ⭐ if this github repo does help.
 
+|        Methods        |   1 GPU   |   DDP - 2 GPU   |   Zero1 - 2 GPU   |   Zero2 - 2 GPU   |   Zero3 - 2 GPU   |
+| :-----------------------: | :------: | :------: | :------: | :------: | :------: |
+| **GPU memory (GB)** | `10.16` | `5.20` | `4.52` | `4.37` | `4.12` |
+
 If you encounter any question, please feel free to contact us. You can create an issue or just send an email to me at [liangyu.wang@kaust.edu.sa](liangyu.wang@kaust.edu.sa).
 
 ## Getting Started
@@ -61,7 +65,7 @@ Feel free to try our demo online on [Kaggle Notebook](https://www.kaggle.com/cod
 - [X] DDP
 - [X] Zero1
 - [X] Zero2
-- [ ] Zero3
+- [X] Zero3
 - [ ] AMP support
 - [X] Compute-communication overlap
 - [X] Meta initialization
