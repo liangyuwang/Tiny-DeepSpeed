@@ -7,7 +7,9 @@ Share us a ⭐ if this github repo does help.
 The table below shows the training GPU memory (GB) of GPT2 under different parallelism strategies for performance comparison.
 |        Methods        |   1 GPU   |   DDP - 2 GPU   |   Zero1 - 2 GPU   |   Zero2 - 2 GPU   |   Zero3 - 2 GPU   |
 | :-----------------------: | :------: | :------: | :------: | :------: | :------: |
-| **GPT2-small** | `10.16` | `5.20` | `4.52` | `4.37` | `4.29` |
+| **GPT2-small** | `4.65` | `4.75` | `4.08` | `3.79` | `3.69` |
+| **GPT2-medium** | `10.12` | `10.23` | `8.65` | `8.25` | `7.73` |
+| **GPT2-large** | `17.35` | `17.46` | `14.08` | `12.89` | `11.01` |
 
 If you encounter any question, please feel free to contact us. You can create an issue or just send an email to me at [liangyu.wang@kaust.edu.sa](liangyu.wang@kaust.edu.sa).
 
