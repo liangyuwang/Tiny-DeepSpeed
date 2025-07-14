@@ -18,7 +18,7 @@ class AdamW(Optimizer):
         self.eps = eps
         self.weight_decay = weight_decay
         self.amsgrad = amsgrad
-        self.t = 0
+        self.t = 1  # Start from 1 for proper bias correction
         super().__init__(parameters)
     
 
@@ -44,8 +44,8 @@ class AdamW(Optimizer):
         v.mul_(self.betas[1]).addcmul_(grad, grad, value=1 - self.betas[1])
 
         # Bias correction for first and second moments
-        m = m / (1 - self.betas[0] ** (self.t+1))
-        v = v / (1 - self.betas[1] ** (self.t+1))
+        m = m / (1 - self.betas[0] ** self.t)
+        v = v / (1 - self.betas[1] ** self.t)
 
         if self.amsgrad:
             max_v = self.max_squared[name]
@@ -56,5 +56,4 @@ class AdamW(Optimizer):
 
         step_size = self.lr * m / denom
         param.data.add_(-step_size)
-        self.t += 1
         return param

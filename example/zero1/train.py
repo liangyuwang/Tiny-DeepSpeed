@@ -36,7 +36,7 @@ model = GPT2Model(config).to(rank)
 model = Zero1(model, parts)
 optimizer = Zero1AdamW(model.module.named_parameters(), lr=1e-5, weight_decay=1e-1, param_part_table=parts, ranks_map=ranks_map)
 
-for i in tqdm(range(100)):
+for i in tqdm(range(100), disable=rank!=0):
     model.require_backward_grad_sync = True # set to True when need grad all reduce
     _, loss = model(input, target)
     loss.backward()

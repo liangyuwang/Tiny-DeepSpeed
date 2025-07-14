@@ -27,7 +27,7 @@ model = GPT2Model(config).to(rank)
 model = DDP(model)
 optimizer = DDPAdamW(model.named_parameters(), lr=1e-5, weight_decay=1e-1)
 
-for i in tqdm(range(100)):
+for i in tqdm(range(100), disable=rank!=0):
     model.require_backward_grad_sync = True # set to True when need grad all reduce
     _, loss = model(input, target)
     loss.backward()

@@ -32,11 +32,11 @@ with torch.device('meta'):
 
 input = torch.randint(0, config.vocab_size, (1, config.block_size)).to(rank)
 target = torch.randint(0, config.vocab_size, (1, config.block_size)).to(rank)
-# model = GPT2Model(config).to(rank)
-model = Zero3(model, parts)
+model = GPT2Model(config)  # Create model on CPU first
+model = Zero3(model, parts)  # Then wrap with Zero3
 optimizer = Zero3AdamW(model.module.named_parameters(), lr=1e-5, weight_decay=1e-1, param_part_table=parts, ranks_map=ranks_map)
 
-for i in tqdm(range(100)):
+for i in tqdm(range(100), disable=rank!=0):
     model.require_backward_grad_sync = True # set to True when need grad all reduce
     _, loss = model(input, target)
     loss.backward()

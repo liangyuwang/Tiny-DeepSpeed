@@ -23,14 +23,25 @@ def gather_grads(param, rank):      # communication complexity: g
     torch.cuda.synchronize()
 
 def _step_fn(self):
+    # Increment time step for optimizers that need it (like AdamW)
+    if hasattr(self, 't'):
+        self.t += 1
+        
     for name, param in self.parameters.items():
-        rank = self.param_part_table[name]
-        if rank == dist.get_rank() and param.grad is None:
-            continue
-        # param.grad = sync_grads(param.grad, rank)
+        # Handle both dict and direct rank formats
+        if isinstance(self.param_part_table[name], dict):
+            rank = self.param_part_table[name]["rank_id"]
+        else:
+            rank = self.param_part_table[name]
+            
+        # Only process parameters owned by this rank
         if rank == dist.get_rank():
+            if param.grad is None:
+                continue
+            # Update parameter on owner rank only
             param = self.one_step(name, param)
-        gather_grads(param, rank)
+        
+        # Clear gradients for all parameters (owned and non-owned)
         self._zero_grad(param)
 
 
@@ -53,13 +64,17 @@ class SGD(sgd.SGD):
                 self.param_part_table, self.velocities = partition_tensors(self.velocities, ranks_map=self.ranks_map, evenness_priority=0)
                 # Actual init velocities
                 for name, _ in self.velocities.items():
-                    if dist.get_rank() == self.param_part_table[name]:
-                        self.velocities[name] = torch.zeros_like(self.velocities[name], device=self.param_part_table[name])
+                    rank_id = self.param_part_table[name]["rank_id"] if isinstance(self.param_part_table[name], dict) else self.param_part_table[name]
+                    device = f"cuda:{rank_id}"
+                    if dist.get_rank() == rank_id:
+                        self.velocities[name] = torch.zeros_like(self.velocities[name], device=device)
             else:
                 # Init velocities
                 for name, param in self.parameters.items():
-                    if dist.get_rank() == self.param_part_table[name]:
-                        self.velocities[name] = torch.zeros_like(param, device=self.param_part_table[name])
+                    rank_id = self.param_part_table[name]["rank_id"] if isinstance(self.param_part_table[name], dict) else self.param_part_table[name]
+                    device = f"cuda:{rank_id}"
+                    if dist.get_rank() == rank_id:
+                        self.velocities[name] = torch.zeros_like(param, device=device)
 
     def step(self):
         _step_fn(self)
@@ -92,19 +107,23 @@ class AdamW(adamw.AdamW):
                 _, self.max_squared = partition_tensors(self.max_squared, ranks_map=self.ranks_map, evenness_priority=0)
             # Actual init
             for name, _ in self.parameters.items():
-                if dist.get_rank() == self.param_part_table[name]:
-                    self.moments[name] = torch.zeros_like(self.moments[name], device=self.param_part_table[name])
-                    self.velocities[name] = torch.zeros_like(self.velocities[name], device=self.param_part_table[name])
+                rank_id = self.param_part_table[name]["rank_id"] if isinstance(self.param_part_table[name], dict) else self.param_part_table[name]
+                device = f"cuda:{rank_id}"
+                if dist.get_rank() == rank_id:
+                    self.moments[name] = torch.zeros_like(self.moments[name], device=device)
+                    self.velocities[name] = torch.zeros_like(self.velocities[name], device=device)
                     if self.amsgrad:
-                        self.max_squared[name] = torch.zeros_like(self.max_squared[name], device=self.param_part_table[name])
+                        self.max_squared[name] = torch.zeros_like(self.max_squared[name], device=device)
         else:
             # Init
             for name, param in self.parameters.items():
-                if dist.get_rank() == self.param_part_table[name]:
-                    self.moments[name] = torch.zeros_like(param, device=self.param_part_table[name])
-                    self.velocities[name] = torch.zeros_like(param, device=self.param_part_table[name])
+                rank_id = self.param_part_table[name]["rank_id"] if isinstance(self.param_part_table[name], dict) else self.param_part_table[name]
+                device = f"cuda:{rank_id}"
+                if dist.get_rank() == rank_id:
+                    self.moments[name] = torch.zeros_like(param, device=device)
+                    self.velocities[name] = torch.zeros_like(param, device=device)
                     if self.amsgrad:
-                        self.max_squared[name] = torch.zeros_like(param, device=self.param_part_table[name])
+                        self.max_squared[name] = torch.zeros_like(param, device=device)
         
     def step(self):
         _step_fn(self)
