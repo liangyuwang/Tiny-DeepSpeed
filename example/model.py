@@ -22,7 +22,7 @@ class GPTConfig:
     n_embd: int = 768
     dropout: float = 0.0
     bias: bool = False
-    attention = "standard_attention" # "standard_attention", "flash_attention"
+    attention = "flash_attention" # "standard_attention", "flash_attention"
 
 class GPTConfigs:
     gpt2: GPTConfig = GPTConfig(n_layer=12, n_head=12, n_embd=768)
