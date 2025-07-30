@@ -48,6 +48,9 @@ torchrun --nproc_per_node num_device --nnodes 1 example/zero1/train.py
 
 # Zero2 mode
 torchrun --nproc_per_node num_device --nnodes 1 example/zero2/train.py
+
+# Zero3 mode
+torchrun --nproc_per_node num_device --nnodes 1 example/zero3/train.py
 ```
 
 This will initiate a simple training loop using the Tiny-DeepSpeed framework.
